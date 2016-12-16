@@ -1,0 +1,11 @@
+Particles:25,
+Timesteps:10,
+RadiusOil:0.010000,
+RadiusParticle:0.000100,
+InitialWidth:0.050000,
+MassOil:0.001000,
+Viscosity:1.000000,
+MagneticSusceptibility:0.000000,
+PermeabilityOil:0.000000,
+SurfaceTension:72.750000,
+MagneticDipole:0.000000|0.000000|0.000000

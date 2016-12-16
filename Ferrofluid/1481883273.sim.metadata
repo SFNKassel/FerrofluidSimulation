@@ -1,0 +1,16 @@
+[SimulationData]
+Particles=25
+Timesteps=10
+Timestamp=1481883273
+[SimulationParameters]
+InitialWidth=0.050000
+RadiusOil=0.010000
+MassOil=0.001000
+PermeabilityOil=0.000000
+Viscosity=1.000000
+RadiusParticle=0.000100
+MagneticSusceptibility=0.000000
+SurfaceTension=72.750000
+MagneticDipoleX=0.000000
+MagneticDipoleY=0.000000
+MagneticDipoleZ=0.000000
