@@ -1,0 +1,163 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 10.1' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      5546,        154]
+NotebookOptionsPosition[      5158,        136]
+NotebookOutlinePosition[      5501,        151]
+CellTagsIndexPosition[      5458,        148]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"x", ",", "y", ",", "z"}], "}"}], ",", "..."}], "}"}], ",", 
+   "..."}], "}"}]], "Input",
+ CellChangeTimes->{{3.6908566350100813`*^9, 3.690856653654033*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"input", "=", 
+   RowBox[{"ToExpression", "[", 
+    RowBox[{
+    "Import", "[", 
+     "\"\<D:\\\\mnt2\\\\Dropbox\\\\Workspaces\\\\Visual Studio\\\\Visual \
+Studio 2015\\\\projects\\\\Ferrofluid\\\\Ferrofluid\\\\1481885697.sim.hrf\>\"\
+", "]"}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.690856664187001*^9, 3.690856676279686*^9}, {
+   3.6908736987838345`*^9, 3.6908737862983356`*^9}, {3.6908738579110937`*^9, 
+   3.6908738804713078`*^9}, 3.6908740346242747`*^9, 3.6908742195432634`*^9, 
+   3.6908742788748817`*^9, 3.6908745280465755`*^9}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"maxSize", "=", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Min", "[", "#", "]"}], "-", "0.2"}], ",", 
+         RowBox[{
+          RowBox[{"Max", "[", "#", "]"}], "+", "0.2"}]}], "}"}], "&"}], "[", 
+      RowBox[{"Flatten", "[", 
+       RowBox[{"input", "[", 
+        RowBox[{"[", 
+         RowBox[{"All", ",", "All", ",", "i"}], "]"}], "]"}], "]"}], "]"}], 
+     ",", 
+     RowBox[{"{", 
+      RowBox[{"i", ",", "1", ",", "3"}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Manipulate", "[", "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Graphics3D", "[", 
+    RowBox[{
+     RowBox[{"Join", "@@", 
+      RowBox[{"Table", "[", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{"Sphere", "[", 
+          RowBox[{"point", ",", "0.01"}], "]"}], "}"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"point", ",", 
+          RowBox[{"input", "[", 
+           RowBox[{"[", "timeStep", "]"}], "]"}]}], "}"}]}], "]"}]}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", "maxSize"}]}], "]"}], ",", 
+   "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{"timeStep", ",", "1", ",", 
+     RowBox[{"Length", "[", "input", "]"}], ",", "1"}], "}"}]}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.6908566916035657`*^9, 3.6908568898760357`*^9}, {
+  3.6908570566438165`*^9, 3.690857201277425*^9}, {3.690873822185136*^9, 
+  3.690873843862439*^9}, {3.6908743144366736`*^9, 3.6908743168017178`*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`timeStep$$ = 374, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`timeStep$$], 1, 500, 1}}, Typeset`size$$ = {
+    267., {214., 218.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`timeStep$10250$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`timeStep$$ = 1}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`timeStep$$, $CellContext`timeStep$10250$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Graphics3D[
+        Apply[Join, 
+         Table[{
+           Sphere[$CellContext`point, 0.01]}, {$CellContext`point, 
+           Part[$CellContext`input, $CellContext`timeStep$$]}]], 
+        PlotRange -> $CellContext`maxSize], 
+      "Specifications" :> {{$CellContext`timeStep$$, 1, 500, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{318., {272., 279.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.690856710217842*^9, 3.6908567282736144`*^9}, 
+   3.69085684233184*^9, 3.690856890594833*^9, {3.690856987412353*^9, 
+   3.6908570122555175`*^9}, 3.6908571616241674`*^9, 3.6908572017462063`*^9, 
+   3.6908737943318777`*^9, {3.690873829760455*^9, 3.6908738853003764`*^9}, 
+   3.69087404191181*^9, 3.6908742261145077`*^9, 3.690874285562245*^9, 
+   3.690874317657503*^9, 3.6908745410715556`*^9}]
+}, Open  ]]
+},
+WindowSize->{1350, 685},
+WindowMargins->{{-8, Automatic}, {Automatic, 0}},
+FrontEndVersion->"10.1 for Microsoft Windows (64-bit) (March 23, 2015)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 260, 8, 31, "Input"],
+Cell[821, 30, 578, 12, 31, "Input"],
+Cell[CellGroupData[{
+Cell[1424, 46, 1531, 43, 92, "Input"],
+Cell[2958, 91, 2184, 42, 568, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
