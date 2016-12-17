@@ -29,6 +29,10 @@ private:
     Vec3 fOberflaecheDops(size_t numParticle);
     void calculate();
     void simulate();
+    Vec3 * posAt(int t, int n);
+    Vec3 * magAt(int t, int n);
+    math * phiAt(int n);
+    Vec3 * forceAt(int n);
 
     size_t m_numParticles;
     size_t m_timestepsRam;
@@ -49,14 +53,15 @@ private:
     std::string m_name;
     math const  m_my0 = 0.0000004 * M_PI;
 
-    Vec3 * m_positions;
-    Vec3 * m_magnetization;
-    math * m_phi;
-    Vec3 * m_force;
-     
+    /*
+     * Vec3 * m_positions;
+     * Vec3 * m_magnetization;
+     * math * m_phi;
+     * Vec3 * m_force;
+     */
 
-    std::vector<std::vector<Vec3>> m_positions;
-    std::vector<std::vector<Vec3>> m_magnetization;
+    std::vector<Vec3> m_positions;
+    std::vector<Vec3> m_magnetization;
     std::vector<math>              m_phi;
     std::vector<Vec3>              m_force;
 

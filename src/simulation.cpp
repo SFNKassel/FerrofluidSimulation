@@ -1,18 +1,33 @@
 #include "simulation.h"
 
-// NOTE(robin): WTF BIRK?????
-// 0 <= T <= m_currentTimestepSinceWrite
-#define posAt(t, n) ((Vec3 *)(m_positions + (n) + ((t)*m_numParticles)))
+/*
+ * // NOTE(robin): WTF BIRK?????
+ * // 0 <= T <= m_currentTimestepSinceWrite
+ * #define posAt(t, n) ((Vec3 *)(m_positions + (n) + ((t)*m_numParticles)))
+ *
+ * // T = {-1, 0}
+ * #define magAt(t, n) \
+ *     ((Vec3 *)(m_magnetization + (n) + \
+ *               ((m_currentTimestepEven ? (t) + 1 : (t) * -1) * \
+ *                m_numParticles)))
+ *
+ * #define phiAt(n) ((math *)(m_phi + (n)))
+ *
+ * #define forceAt(n) ((Vec3 *)(m_force + (n)))
+ */
 
-// T = {-1, 0}
-#define magAt(t, n)                                                            \
-    ((Vec3 *)(m_magnetization + (n) +                                          \
-              ((m_currentTimestepEven ? (t) + 1 : (t) * -1) *                  \
-               m_numParticles)))
+Vec3 * Simulation::posAt(int t, int n) {
+    return &m_positions[n + t * m_numParticles];
+}
 
-#define phiAt(n) ((math *)(m_phi + (n)))
+Vec3 * Simulation::magAt(int t, int n) {
+    return &m_positions[n + ((m_currentTimestepEven ? (t) + 1 : (t) * -1) *
+                             m_numParticles)];
+}
 
-#define forceAt(n) ((Vec3 *)(m_force + (n)))
+math * Simulation::phiAt(int n) { return &m_phi[n]; }
+
+Vec3 * Simulation::forceAt(int n) { return &m_force[n]; }
 
 Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
                        long timestep_us, math width_basin, math viscosityOil,
@@ -53,15 +68,10 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
         m_output = output;
     }
 
-    m_positions.reserve(timesteps_ram);
-    for(unsigned int i = 0; i < timesteps_ram; i++) {
-        m_positions[i] = std::vector<Vec3>(num_particles);
-    }
-     
-
-    m_magnetization = (Vec3 *)malloc(sizeof(Vec3) * 2 * num_particles);
-    m_phi           = (math *)malloc(sizeof(math) * num_particles);
-    m_force         = (Vec3 *)malloc(sizeof(Vec3) * num_particles);
+    m_positions.reserve(num_particles * timesteps_ram);
+    m_magnetization.reserve(2 * num_particles);
+    m_phi.reserve(num_particles);
+    m_force.reserve(num_particles);
 
     // Build initial Particles
     {
@@ -123,11 +133,6 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
     fclose(file);
 
     system((std::string("java -jar ") + jarfile).c_str());
-
-    free(m_positions);
-    free(m_phi);
-    free(m_magnetization);
-    free(m_force);
 }
 
 Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2, math effectiveRadius) {
@@ -238,7 +243,8 @@ void Simulation::computePhi() {
     Vec3 h(0, 0, 0);
     math phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
-        h         = H(i);
+        h = H(i);
+        /* *magAt(0, i) = h;           */
         phi       = m_my0 * m_myR * sq(h.x) + sq(h.y) + sq(h.z) / 2.0;
         *phiAt(i) = phi < 0 ? -phi : phi;
     }
@@ -383,16 +389,17 @@ void Simulation::simulate() {
             std::cout << (m_output + m_name + ".sim.metadata").c_str()
                       << std::endl;
             FILE * file = fopen((m_output + m_name + ".sim").c_str(), "ab");
-            fwrite(((math *)m_positions), sizeof(math),
-                   (m_numParticles) * (m_timestepsRam)*3, file);
+            fwrite(m_positions.data(), sizeof(Vec3),
+                   m_numParticles * m_timestepsRam, file);
             fclose(file);
         }
     }
     if(m_currentTimestepSinceWrite != 0) {
         std::cout << (m_output + m_name + ".sim.metadata").c_str() << std::endl;
         FILE * file = fopen((m_output + m_name + ".sim").c_str(), "ab");
-        fwrite(((math *)m_positions), sizeof(math),
-               (m_numParticles) * (m_currentTimestepSinceWrite - 1) * 3, file);
+
+        fwrite(m_positions.data(), sizeof(Vec3),
+               m_numParticles * (m_currentTimestepSinceWrite - 1), file);
         fclose(file);
     }
 }
