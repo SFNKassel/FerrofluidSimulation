@@ -53,6 +53,13 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
         m_output = output;
     }
 
+    /*
+     * m_positions.reserve(timesteps_ram);
+     * for(unsigned int i = 0; i < timesteps_ram; i++) {
+     *     m_positions[i] = std::vector<Vec3>(num_particles);
+     * }
+     */
+
     m_positions = (Vec3 *)malloc(sizeof(Vec3) * timesteps_ram * num_particles);
     m_magnetization = (Vec3 *)malloc(sizeof(Vec3) * 2 * num_particles);
     m_phi           = (math *)malloc(sizeof(math) * num_particles);
@@ -125,8 +132,7 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
     free(m_force);
 }
 
-inline Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2,
-                                    math effectiveRadius) {
+Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2, math effectiveRadius) {
     Vec3 diff(pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z);
     return Vec3(-(945.0 * diff.x * sq(sq(effectiveRadius) - sq(diff.x) -
                                       sq(diff.y) - sq(diff.z))) /
@@ -139,7 +145,7 @@ inline Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2,
                     (32 * pow(effectiveRadius, 9) * M_PI));
 }
 
-inline Vec3 Simulation::hDipole(Vec3 atPos, Vec3 mVector, math my) {
+Vec3 Simulation::hDipole(Vec3 atPos, Vec3 mVector, math my) {
     return Vec3(
         (((-3 * atPos.x *
            (mVector.x * atPos.x + mVector.y * atPos.y + mVector.z * atPos.z)) /
@@ -158,7 +164,7 @@ inline Vec3 Simulation::hDipole(Vec3 atPos, Vec3 mVector, math my) {
             (4 * M_PI * my));
 }
 
-inline math Simulation::nablaRijByRijCubed(Vec3 pos1, Vec3 pos2) {
+math Simulation::nablaRijByRijCubed(Vec3 pos1, Vec3 pos2) {
     Vec3 diff(pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z);
     return -((3 * sq(diff.x)) /
              pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 2.5)) -
@@ -167,7 +173,7 @@ inline math Simulation::nablaRijByRijCubed(Vec3 pos1, Vec3 pos2) {
            (3 / pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 1.5));
 }
 
-inline math Simulation::nablaChiH(size_t numParticle) {
+math Simulation::nablaChiH(size_t numParticle) {
     size_t oneTimestepAgo =
         m_currentTimestepSinceWrite < 1
             ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
@@ -187,7 +193,7 @@ inline math Simulation::nablaChiH(size_t numParticle) {
     return output;
 }
 
-inline Vec3 Simulation::H(size_t numParticle) {
+Vec3 Simulation::H(size_t numParticle) {
     size_t oneTimestepAgo =
         m_currentTimestepSinceWrite < 1
             ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
@@ -230,7 +236,7 @@ inline Vec3 Simulation::H(size_t numParticle) {
     return result;
 }
 
-inline void Simulation::computePhi() {
+void Simulation::computePhi() {
     Vec3 h(0, 0, 0);
     math phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
@@ -240,7 +246,7 @@ inline void Simulation::computePhi() {
     }
 }
 
-inline Vec3 Simulation::fMag(size_t numParticle) {
+Vec3 Simulation::fMag(size_t numParticle) {
     size_t oneTimestepAgo =
         m_currentTimestepSinceWrite < 1
             ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
@@ -264,7 +270,7 @@ inline Vec3 Simulation::fMag(size_t numParticle) {
     return result;
 }
 
-inline Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
+Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
     size_t oneTimestepAgo =
         m_currentTimestepSinceWrite < 1
             ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
@@ -310,7 +316,7 @@ inline Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
     return result;
 }
 
-inline void Simulation::calculate() {
+void Simulation::calculate() {
     computePhi();
     size_t oneTimestepAgo =
         m_currentTimestepSinceWrite < 1

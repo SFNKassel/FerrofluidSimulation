@@ -1,11 +1,12 @@
 #pragma once
 
-#include <iostream>
 #include <cstring>
 #include <ctime>
+#include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 #include "math.h"
 
@@ -14,7 +15,8 @@ public:
     Simulation(size_t num_particles, size_t timesteps_ram, long timestep_us,
                math width_basin, math viscosityOil, math chi, math myR,
                math sigma, math radius_particle, math radius_oil, math mass_oil,
-               Vec3 mDipole, long num_timesteps, std::string output, std::string jarfile);
+               Vec3 mDipole, long num_timesteps, std::string output,
+               std::string jarfile);
 
 private:
     Vec3 nablaKernel(Vec3 pos1, Vec3 pos2, math effectiveRadius);
@@ -51,6 +53,15 @@ private:
     Vec3 * m_magnetization;
     math * m_phi;
     Vec3 * m_force;
+     
+
+    /*
+     * std::vector<std::vector<Vec3>> m_positions;
+     * std::vector<std::vector<Vec3>> m_magnetization;
+     * std::vector<math>              m_phi;
+     * std::vector<Vec3>              m_force;
+     */
+     
 
     std::string m_output;
     std::string m_jarfile;
