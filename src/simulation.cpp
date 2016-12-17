@@ -11,7 +11,7 @@
  *               ((m_currentTimestepEven ? (t) + 1 : (t) * -1) * \
  *                m_numParticles)))
  *
- * #define phiAt(n) ((math *)(m_phi + (n)))
+ * #define phiAt(n) ((f64 *)(m_phi + (n)))
  *
  * #define forceAt(n) ((Vec3 *)(m_force + (n)))
  */
@@ -25,20 +25,20 @@ Vec3 * Simulation::magAt(int t, int n) {
                              m_numParticles)];
 }
 
-math * Simulation::phiAt(int n) { return &m_phi[n]; }
+f64 * Simulation::phiAt(int n) { return &m_phi[n]; }
 
 Vec3 * Simulation::forceAt(int n) { return &m_force[n]; }
 
 Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
-                       long timestep_us, math width_basin, math viscosityOil,
-                       math chi, math myR, math sigma, math radius_particle,
-                       math radius_oil, math mass_oil, Vec3 mDipole,
+                       long timestep_us, f64 width_basin, f64 viscosityOil,
+                       f64 chi, f64 myR, f64 sigma, f64 radius_particle,
+                       f64 radius_oil, f64 mass_oil, Vec3 mDipole,
                        long num_timesteps, std::string output,
                        std::string jarfile) {
     m_name                      = std::to_string(time(0));
     m_numParticles              = num_particles;
     m_timestepsRam              = timesteps_ram;
-    m_timestepS                 = ((math)timestep_us) / 1000000.0;
+    m_timestepS                 = ((f64)timestep_us) / 1000000.0;
     m_numTimestep               = num_timesteps;
     m_currentTimestep           = 0;
     m_currentTimestepSinceWrite = 0;
@@ -76,18 +76,18 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
     // Build initial Particles
     {
         size_t usedParticles = 0;
-        math   height        = 0.0f;
+        f64    height        = 0.0f;
         while(usedParticles < m_numParticles) {
             *posAt(0, usedParticles) = Vec3(0.0f, 0.0f, height);
             *posAt(m_timestepsRam - 1, usedParticles++) =
                 Vec3(0.0f, 0.0f, height);
-            for(math width = m_radiusOil * 2; width < m_widthBasin;
+            for(f64 width = m_radiusOil * 2; width < m_widthBasin;
                 width += m_radiusOil * 2) {
                 size_t toDistribute = (2 * M_PI * width) / (2 * m_radiusOil);
                 if(toDistribute > (m_numParticles - usedParticles))
-                    toDistribute  = (m_numParticles - usedParticles);
-                math alpha        = (2 * M_PI) / toDistribute;
-                math currentAlpha = 0;
+                    toDistribute = (m_numParticles - usedParticles);
+                f64 alpha        = (2 * M_PI) / toDistribute;
+                f64 currentAlpha = 0;
                 for(size_t particle = 0; particle < toDistribute; particle++) {
                     *posAt(0, usedParticles) =
                         Vec3(cos(alpha * particle) * width,
@@ -135,61 +135,47 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
     system((std::string("java -jar ") + jarfile).c_str());
 }
 
-Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2, math effectiveRadius) {
-    Vec3 diff(pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z);
-    return Vec3(-(945.0 * diff.x * sq(sq(effectiveRadius) - sq(diff.x) -
-                                      sq(diff.y) - sq(diff.z))) /
-                    (32 * pow(effectiveRadius, 9) * M_PI),
-                -(945.0 * diff.y * sq(sq(effectiveRadius) - sq(diff.x) -
-                                      sq(diff.y) - sq(diff.z))) /
-                    (32 * pow(effectiveRadius, 9) * M_PI),
-                -(945.0 * diff.z * sq(sq(effectiveRadius) - sq(diff.x) -
-                                      sq(diff.y) - sq(diff.z))) /
-                    (32 * pow(effectiveRadius, 9) * M_PI));
+Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2, f64 effectiveRadius) {
+    Vec3 diff = pos1 - pos2;
+
+    Vec3 ret = diff * -954.0 * sq(sq(effectiveRadius) + diff * -diff) /
+               (32 * pow(effectiveRadius, 9) * M_PI);
+
+    return ret;
 }
 
-Vec3 Simulation::hDipole(Vec3 atPos, Vec3 mVector, math my) {
-    return Vec3(
-        (((-3 * atPos.x *
-           (mVector.x * atPos.x + mVector.y * atPos.y + mVector.z * atPos.z)) /
-          pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 2.5)) +
-         mVector.x / pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 1.5)) /
-            (4 * M_PI * my),
-        (((-3 * atPos.y *
-           (mVector.x * atPos.x + mVector.y * atPos.y + mVector.z * atPos.z)) /
-          pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 2.5)) +
-         mVector.y / pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 1.5)) /
-            (4 * M_PI * my),
-        (((-3 * atPos.z *
-           (mVector.x * atPos.x + mVector.y * atPos.y + mVector.z * atPos.z)) /
-          pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 2.5)) +
-         mVector.z / pow(sq(atPos.x) + sq(atPos.y) + sq(atPos.z), 1.5)) /
-            (4 * M_PI * my));
+Vec3 Simulation::hDipole(Vec3 atPos, Vec3 mVector, f64 my) {
+    double tmp = atPos * atPos;
+    Vec3   rhs = mVector / pow(tmp, 1.5) / (4 * M_PI * my);
+    Vec3   lhs = atPos * -3.0 * (atPos * mVector) / pow(tmp, 2.5);
+
+    return lhs + rhs;
 }
 
-math Simulation::nablaRijByRijCubed(Vec3 pos1, Vec3 pos2) {
-    Vec3 diff(pos1.x - pos2.x, pos1.y - pos2.y, pos1.z - pos2.z);
-    return -((3 * sq(diff.x)) /
-             pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 2.5)) -
-           ((3 * sq(diff.y)) / pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 2.5)) -
-           ((3 * sq(diff.z)) / pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 2.5)) +
-           (3 / pow(sq(diff.x) + sq(diff.y) + sq(diff.z), 1.5));
+f64 Simulation::nablaRijByRijCubed(Vec3 pos1, Vec3 pos2) {
+    Vec3   diff = pos1 - pos2;
+    double tmp  = diff * diff;
+    Vec3   ret  = diff * 3 / pow(tmp, 2.5);
+    return (ret.x + ret.y + ret.z - 3 / pow(tmp, 1.5));
 }
 
-math Simulation::nablaChiH(size_t numParticle) {
-    size_t oneTimestepAgo =
-        m_currentTimestepSinceWrite < 1
-            ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
-            : m_currentTimestepSinceWrite - 1;
-    math output  = 0.0;
-    Vec3 nKernel = Vec3(0, 0, 0);
+size_t Simulation::getOneTimestepAgo() {
+    size_t oneTimestepAgo = m_currentTimestepSinceWrite - 1;
+    if(m_currentTimestepSinceWrite < 1) { oneTimestepAgo += m_timestepsRam; }
+
+    return oneTimestepAgo;
+}
+
+f64 Simulation::nablaChiH(size_t numParticle) {
+    size_t oneTimestepAgo = getOneTimestepAgo();
+
+    f64  output  = 0.0;
+    Vec3 nKernel = Vec3(0);
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
         nKernel = nablaKernel(*posAt(oneTimestepAgo, numParticle),
                               *posAt(oneTimestepAgo, i), m_radiusParticle);
-        output += nKernel.x * (magAt(-1, i))->x;
-        output += nKernel.y * (magAt(-1, i))->y;
-        output += nKernel.z * (magAt(-1, i))->z;
+        output += nKernel * *magAt(-1, i);
     }
     output *= m_volumeParticle;
     output *= m_chi;
@@ -197,51 +183,37 @@ math Simulation::nablaChiH(size_t numParticle) {
 }
 
 Vec3 Simulation::H(size_t numParticle) {
-    size_t oneTimestepAgo =
-        m_currentTimestepSinceWrite < 1
-            ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
-            : m_currentTimestepSinceWrite - 1;
+    size_t oneTimestepAgo = getOneTimestepAgo();
     Vec3 pos = *posAt(oneTimestepAgo, numParticle);
-    Vec3 currentPos(0, 0, 0);
-    Vec3 diff(0, 0, 0);
+    Vec3 currentPos(0);
+    Vec3 diff(0);
     Vec3 result = hDipole(pos, m_mDipole, m_myR * m_my0);
-    Vec3 sum(0, 0, 0);
-    Vec3 mag(0, 0, 0);
+    Vec3 sum(0);
+    Vec3 mag(0);
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
         currentPos = *posAt(oneTimestepAgo, i);
-        diff.x     = currentPos.x - pos.x;
-        diff.y     = currentPos.y - pos.y;
-        diff.z     = currentPos.z - pos.z;
+        diff = currentPos - pos;
 
-        math factor1 =
-            nablaChiH(i) / sqrt(sq(diff.x) + sq(diff.y) + sq(diff.z));
-        sum.x += diff.x * factor1;
-        sum.y += diff.y * factor1;
-        sum.z += diff.z * factor1;
+        f64 factor1 = nablaChiH(i) / diff.norm();
+        sum += diff * factor1;
 
-        math factor2 = m_chi * nablaRijByRijCubed(currentPos, pos);
-        mag          = *magAt(-1, i);
-        sum.x += mag.x * factor2;
-        sum.y += mag.y * factor2;
-        sum.z += mag.z * factor2;
+        f64 factor2 = m_chi * nablaRijByRijCubed(currentPos, pos);
+        mag         = *magAt(-1, i);
+        sum += mag * factor2;
     }
 
-    math factor = m_volumeParticle / (4 * M_PI * m_myR * m_my0);
-    sum.x *= factor;
-    sum.y *= factor;
-    sum.z *= factor;
+    f64 factor = m_volumeParticle / (4 * M_PI * m_myR * m_my0);
+    sum *= factor;
 
-    result.x -= sum.x;
-    result.y -= sum.y;
-    result.z -= sum.z;
+    result -= sum;
 
     return result;
 }
 
 void Simulation::computePhi() {
     Vec3 h(0, 0, 0);
-    math phi = 0.0;
+    f64  phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
         h = H(i);
         /* *magAt(0, i) = h;           */
@@ -257,7 +229,7 @@ Vec3 Simulation::fMag(size_t numParticle) {
             : m_currentTimestepSinceWrite - 1;
     Vec3 result(0, 0, 0);
     Vec3 sum(0, 0, 0);
-    math phi = 0.0;
+    f64  phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
         phi = *phiAt(i);
@@ -279,10 +251,10 @@ Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
         m_currentTimestepSinceWrite < 1
             ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
             : m_currentTimestepSinceWrite - 1;
-    math   d       = 0.0;
-    math   force   = 0.0;
-    math   max     = 0.0;
-    math   maxDops = 0.0;
+    f64    d       = 0.0;
+    f64    force   = 0.0;
+    f64    max     = 0.0;
+    f64    maxDops = 0.0;
     Vec3 * particle;
     Vec3   currentParticle = *posAt(oneTimestepAgo, numParticle);
     Vec3   distance(0, 0, 0);
@@ -338,7 +310,7 @@ void Simulation::calculate() {
 
         f->z -= m_gravity * m_massOil;
 
-        math frictionCoefficient = 6 * M_PI * m_viscosity * m_radiusParticle;
+        f64 frictionCoefficient = 6 * M_PI * m_viscosity * m_radiusParticle;
         f->x -= frictionCoefficient * ((*posAt(twoTimestepAgo, i)).x -
                                        (*posAt(oneTimestepAgo, i)).x) *
                 m_timestepS;
