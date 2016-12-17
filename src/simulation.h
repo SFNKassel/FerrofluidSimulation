@@ -55,13 +55,10 @@ private:
     Vec3 * m_force;
      
 
-    /*
-     * std::vector<std::vector<Vec3>> m_positions;
-     * std::vector<std::vector<Vec3>> m_magnetization;
-     * std::vector<math>              m_phi;
-     * std::vector<Vec3>              m_force;
-     */
-     
+    std::vector<std::vector<Vec3>> m_positions;
+    std::vector<std::vector<Vec3>> m_magnetization;
+    std::vector<math>              m_phi;
+    std::vector<Vec3>              m_force;
 
     std::string m_output;
     std::string m_jarfile;

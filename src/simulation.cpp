@@ -53,14 +53,12 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
         m_output = output;
     }
 
-    /*
-     * m_positions.reserve(timesteps_ram);
-     * for(unsigned int i = 0; i < timesteps_ram; i++) {
-     *     m_positions[i] = std::vector<Vec3>(num_particles);
-     * }
-     */
+    m_positions.reserve(timesteps_ram);
+    for(unsigned int i = 0; i < timesteps_ram; i++) {
+        m_positions[i] = std::vector<Vec3>(num_particles);
+    }
+     
 
-    m_positions = (Vec3 *)malloc(sizeof(Vec3) * timesteps_ram * num_particles);
     m_magnetization = (Vec3 *)malloc(sizeof(Vec3) * 2 * num_particles);
     m_phi           = (math *)malloc(sizeof(math) * num_particles);
     m_force         = (Vec3 *)malloc(sizeof(Vec3) * num_particles);
