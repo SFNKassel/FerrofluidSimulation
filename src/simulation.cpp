@@ -21,8 +21,8 @@ Vec3 * Simulation::posAt(int t, int n) {
 }
 
 Vec3 * Simulation::magAt(int t, int n) {
-    return &m_positions[n + ((m_currentTimestepEven ? (t) + 1 : (t) * -1) *
-                             m_numParticles)];
+    return &m_magnetization[n + ((m_currentTimestepEven ? (t) + 1 : (t) * -1) *
+                                 m_numParticles)];
 }
 
 f64 * Simulation::phiAt(int n) { return &m_phi[n]; }
@@ -184,16 +184,16 @@ f64 Simulation::nablaChiH(size_t numParticle) {
 
 Vec3 Simulation::H(size_t numParticle) {
     size_t oneTimestepAgo = getOneTimestepAgo();
-    Vec3 pos = *posAt(oneTimestepAgo, numParticle);
-    Vec3 currentPos(0);
-    Vec3 diff(0);
-    Vec3 result = hDipole(pos, m_mDipole, m_myR * m_my0);
-    Vec3 sum(0);
-    Vec3 mag(0);
+    Vec3   pos            = *posAt(oneTimestepAgo, numParticle);
+    Vec3   currentPos(0);
+    Vec3   diff(0);
+    Vec3   result = hDipole(pos, m_mDipole, m_myR * m_my0);
+    Vec3   sum(0);
+    Vec3   mag(0);
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
         currentPos = *posAt(oneTimestepAgo, i);
-        diff = currentPos - pos;
+        diff       = currentPos - pos;
 
         f64 factor1 = nablaChiH(i) / diff.norm();
         sum += diff * factor1;
@@ -216,59 +216,47 @@ void Simulation::computePhi() {
     f64  phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
         h = H(i);
-        /* *magAt(0, i) = h;           */
+        *magAt(0, i) = h;
         phi       = m_my0 * m_myR * sq(h.x) + sq(h.y) + sq(h.z) / 2.0;
         *phiAt(i) = phi < 0 ? -phi : phi;
     }
 }
 
 Vec3 Simulation::fMag(size_t numParticle) {
-    size_t oneTimestepAgo =
-        m_currentTimestepSinceWrite < 1
-            ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
-            : m_currentTimestepSinceWrite - 1;
-    Vec3 result(0, 0, 0);
-    Vec3 sum(0, 0, 0);
-    f64  phi = 0.0;
+    size_t oneTimestepAgo = getOneTimestepAgo();
+    Vec3   result(0);
+    Vec3   sum(0);
+    f64    phi = 0.0;
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
         phi = *phiAt(i);
         sum = nablaKernel(*posAt(oneTimestepAgo, numParticle),
                           *posAt(oneTimestepAgo, i), m_radiusParticle);
-        result.x += sum.x * phi;
-        result.y += sum.y * phi;
-        result.z += sum.z * phi;
+        result += sum * phi;
     }
-    result.x *= -m_volumeParticle;
-    result.y *= -m_volumeParticle;
-    result.z *= -m_volumeParticle;
+    result *= -m_volumeParticle;
 
     return result;
 }
 
 Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
-    size_t oneTimestepAgo =
-        m_currentTimestepSinceWrite < 1
-            ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
-            : m_currentTimestepSinceWrite - 1;
-    f64    d       = 0.0;
-    f64    force   = 0.0;
-    f64    max     = 0.0;
-    f64    maxDops = 0.0;
+    size_t oneTimestepAgo = getOneTimestepAgo();
+    f64    d              = 0.0;
+    f64    force          = 0.0;
+    f64    max            = 0.0;
+    f64    maxDops        = 0.0;
     Vec3 * particle;
     Vec3   currentParticle = *posAt(oneTimestepAgo, numParticle);
-    Vec3   distance(0, 0, 0);
+    Vec3   distance(0);
 
-    Vec3 result(0, 0, 0);
+    Vec3 result(0);
     for(size_t i = 0; i < m_numParticles; i++) {
         if(i == numParticle) continue;
 
-        particle   = posAt(oneTimestepAgo, i);
-        distance.x = currentParticle.x - particle->x;
-        distance.y = currentParticle.y - particle->y;
-        distance.z = currentParticle.z - particle->z;
+        particle = posAt(oneTimestepAgo, i);
+        distance = currentParticle - *particle;
 
-        d   = sqrt(sq(distance.x) + sq(distance.y) + sq(distance.z));
+        d   = distance.norm();
         max = (4.0 * m_radiusOil) - d;
 
         maxDops = ((-5.0 * m_gravity) * ((2 * m_radiusOil) / d + 0.1) +
@@ -278,15 +266,11 @@ Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
         if(max < 0.0) continue;
 
         force = m_kSTension / d * max / 900.0;
-        result.x -= force * distance.x;
-        result.y -= force * distance.y;
-        result.z -= force * distance.z;
+        result -= distance * force;
 
         if(maxDops < 0.0) continue;
 
-        result.x += maxDops * distance.x;
-        result.y += maxDops * distance.y;
-        result.z += maxDops * distance.z;
+        result += distance * maxDops;
     }
 
     return result;
@@ -294,10 +278,7 @@ Vec3 Simulation::fOberflaecheDops(size_t numParticle) {
 
 void Simulation::calculate() {
     computePhi();
-    size_t oneTimestepAgo =
-        m_currentTimestepSinceWrite < 1
-            ? m_currentTimestepSinceWrite - 1 + m_timestepsRam
-            : m_currentTimestepSinceWrite - 1;
+    size_t oneTimestepAgo = getOneTimestepAgo();
     size_t twoTimestepAgo =
         m_currentTimestepSinceWrite < 2
             ? m_currentTimestepSinceWrite - 2 + m_timestepsRam
@@ -306,45 +287,31 @@ void Simulation::calculate() {
     for(size_t i = 0; i < m_numParticles; i++) {
         Vec3 * f = forceAt(i);
         //*f = fMag(i);
-        *f = Vec3(0, 0, 0);
+        *f = Vec3(0);
 
         f->z -= m_gravity * m_massOil;
 
         f64 frictionCoefficient = 6 * M_PI * m_viscosity * m_radiusParticle;
-        f->x -= frictionCoefficient * ((*posAt(twoTimestepAgo, i)).x -
-                                       (*posAt(oneTimestepAgo, i)).x) *
-                m_timestepS;
-        f->y -= frictionCoefficient * ((*posAt(twoTimestepAgo, i)).y -
-                                       (*posAt(oneTimestepAgo, i)).y) *
-                m_timestepS;
-        f->z -= frictionCoefficient * ((*posAt(twoTimestepAgo, i)).z -
-                                       (*posAt(oneTimestepAgo, i)).z) *
-                m_timestepS;
+
+        Vec3 dist = *posAt(twoTimestepAgo, i) - *posAt(oneTimestepAgo, i);
+        *f -= dist * frictionCoefficient * m_timestepS;
 
         Vec3 surfaceTensionDops = fOberflaecheDops(i);
-        f->x += surfaceTensionDops.x;
-        f->y += surfaceTensionDops.y;
-        f->z += surfaceTensionDops.z;
+        *f += surfaceTensionDops;
     }
 
-    Vec3   v(0, 0, 0);
+    Vec3   v(0);
     Vec3 * posN;
     Vec3 * posA;
     for(size_t i = 0; i < m_numParticles; i++) {
-        v.x = ((*posAt(twoTimestepAgo, i)).x - (*posAt(oneTimestepAgo, i)).x);
-        v.y = ((*posAt(twoTimestepAgo, i)).y - (*posAt(oneTimestepAgo, i)).y);
-        v.z = ((*posAt(twoTimestepAgo, i)).z - (*posAt(oneTimestepAgo, i)).z);
+        v = *posAt(twoTimestepAgo, i) - *posAt(oneTimestepAgo, i);
 
-        v.x += (*forceAt(i)).x / m_massOil;
-        v.y += (*forceAt(i)).y / m_massOil;
-        v.z += (*forceAt(i)).z / m_massOil;
+        v += (*forceAt(i)) / m_massOil;
 
         posN = posAt(m_currentTimestepSinceWrite, i);
         posA = posAt(oneTimestepAgo, i);
 
-        posN->x = posA->x + (v.x * m_timestepS);
-        posN->y = posA->y + (v.y * m_timestepS);
-        posN->z = posA->z + (v.z * m_timestepS);
+        *posN = *posA + (v * m_timestepS);
     }
 }
 
