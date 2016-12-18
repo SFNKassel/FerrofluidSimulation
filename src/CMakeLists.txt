@@ -11,7 +11,7 @@ if (CMAKE_COMPILER_IS_GNUCXX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -pedantic")
 elseif(WIN32)
 	message(status "Setting ICC")
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} /O3 /Ob2 /Oi /Ot /GT /GA /Qopt-matmul /Qparallel /Quse-intel-optimized-headers /Gy /arch:AVX2 /fp:fast=2 /Qstd=c++11")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} /O3 /Ob2 /Oi /Ot /GT /GA /Qopt-matmul /Qparallel /Qopenmp /Quse-intel-optimized-headers /Gy /arch:AVX2 /fp:fast=2 /Qstd=c++11")
 endif()
 
 set_property(TARGET ${project_BIN} PROPERTY CXX_STANDARD 14)

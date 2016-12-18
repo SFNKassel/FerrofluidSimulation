@@ -8,7 +8,7 @@
 
 namespace constant {
     constexpr f64 M_PI   = 3.14159265358979323;
-    constexpr f64 width_basin = 0.05;
+    constexpr f64 width_basin = 0.1;
     constexpr f64 viscosity   = 1.0;
     constexpr f64 chi         = 0;
     constexpr f64 myR         = 0.0;

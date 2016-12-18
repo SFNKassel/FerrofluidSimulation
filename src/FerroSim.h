@@ -170,12 +170,11 @@ struct sim : sim_data {
 
             max     = (4.0 * radius_oil) - d;
             maxDops = ((-5.0 * gravity) * ((2 * radius_oil) / d + 0.1) +
-                       (5.5 * gravity)) /
-                      300;
+                       (5.5 * gravity));
 
             if(max < 0.0) continue;
 
-            force = kSTension / d * max / 900.0;
+            force = kSTension / d * max;
             result -= distance * force;
 
             if(maxDops < 0.0) continue;
