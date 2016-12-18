@@ -10,6 +10,8 @@
 
 #include "math.h"
 
+using namespace std;
+
 class Simulation {
 public:
     Simulation(size_t num_particles, size_t timesteps_ram, long timestep_us,

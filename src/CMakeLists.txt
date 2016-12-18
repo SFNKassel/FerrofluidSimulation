@@ -7,7 +7,7 @@ TARGET_LINK_LIBRARIES(${project_BIN} ${project_LIBS})
 
 SET_TARGET_PROPERTIES(${project_BIN} PROPERTIES VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}" OUTPUT_NAME ${project_BIN} CLEAN_DIRECT_OUTPUT 1)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-missing-field-initializers -pedantic")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -pedantic")
 TARGET_COMPILE_FEATURES(${PROJECT_NAME} PRIVATE cxx_constexpr)
 
 INSTALL(TARGETS ${project_BIN} DESTINATION bin)

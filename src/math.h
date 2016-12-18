@@ -27,9 +27,9 @@ struct Vector3D {
     valueType y;
     valueType z;
 
-    Vector3D() : x(), y(), z() {}
-    Vector3D(valueType a) : x(a), y(a), z(a) {}
-    Vector3D(valueType a, valueType b, valueType c) : x(a), y(b), z(c) {}
+    constexpr Vector3D() : x(), y(), z() {}
+    constexpr Vector3D(valueType a) : x(a), y(a), z(a) {}
+    constexpr Vector3D(valueType a, valueType b, valueType c) : x(a), y(b), z(c) {}
     Vector3D(const Vector3D & other) {
         this->x = other.x;
         this->y = other.y;

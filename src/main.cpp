@@ -1,3 +1,4 @@
+#include "FerroSim.h"
 #include "args.h"
 #include "simulation.h"
 
@@ -19,20 +20,30 @@ int main(int argc, char ** argv) {
         return 1;
     }
 
-    std::string out;
-    std::string jfile;
-    if(!output) {
-        out = "";
-    } else {
-        out = args::get(output);
+    std::string out   = "";
+    std::string jfile = "";
+    if(output) { out = args::get(output); }
+
+    if(jarfile) { jfile = args::get(jarfile); }
+
+    if(out.size() > 0) {
+        if(out[out.size() - 1] != '/') { out = out + "/"; }
     }
 
-    if(!jarfile) {
-        jfile = "";
-    } else {
-        jfile = args::get(jarfile);
-    }
+    /*
+     * Simulation s(80, 500, 100, 0.05, 1, 0, 0, 72.75, 0.0001, 0.01, 0.001,
+     *              Vec3(0, 0, 0), 500, out, jfile);
+     */
 
-    Simulation s(80, 500, 100, 0.05, 1, 0, 0, 72.75, 0.0001, 0.01, 0.001,
-                 Vec3(0, 0, 0), 500, out, jfile);
+    string timestamp = to_string(time(0) + 1);
+    sim f(80, 5000, 3000, [&](vector<Vec3> & positions) {
+        FILE * file = fopen((out + timestamp + ".sim").c_str(), "ab");
+        fwrite(positions.data(), sizeof(Vec3), positions.size(), file);
+        fclose(file);
+    });
+    f.simulate();
+
+    f.write_metadata(out + timestamp + ".sim.metadata", timestamp);
+    cout << (out + timestamp + ".sim").c_str() << endl;
+    system((std::string("java -jar ") + jfile + " " + out).c_str());
 }

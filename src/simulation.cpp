@@ -68,7 +68,7 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
         m_output = output;
     }
 
-    m_positions.reserve(num_particles * timesteps_ram);
+    m_positions.reserve(num_particles * (timesteps_ram + 1));
     m_magnetization.reserve(2 * num_particles);
     m_phi.reserve(num_particles);
     m_force.reserve(num_particles);
@@ -132,7 +132,7 @@ Simulation::Simulation(size_t num_particles, size_t timesteps_ram,
     fwrite(metadata.c_str(), sizeof(char), metadata.length(), file);
     fclose(file);
 
-    system((std::string("java -jar ") + jarfile).c_str());
+    system((std::string("java -jar ") + jarfile + " " + output).c_str());
 }
 
 Vec3 Simulation::nablaKernel(Vec3 pos1, Vec3 pos2, f64 effectiveRadius) {
@@ -217,8 +217,8 @@ void Simulation::computePhi() {
     for(size_t i = 0; i < m_numParticles; i++) {
         h = H(i);
         *magAt(0, i) = h;
-        phi       = m_my0 * m_myR * sq(h.x) + sq(h.y) + sq(h.z) / 2.0;
-        *phiAt(i) = phi < 0 ? -phi : phi;
+        phi       = m_my0 * m_myR * (h * h) / 2.0;
+        *phiAt(i) = (phi < 0 ? -phi : phi);
     }
 }
 
@@ -306,7 +306,8 @@ void Simulation::calculate() {
     for(size_t i = 0; i < m_numParticles; i++) {
         v = *posAt(twoTimestepAgo, i) - *posAt(oneTimestepAgo, i);
 
-        v += (*forceAt(i)) / m_massOil;
+        v += (*forceAt(i)) / m_massOil * m_timestepS;
+        /* v += (*forceAt(i)) / m_massOil; */
 
         posN = posAt(m_currentTimestepSinceWrite, i);
         posA = posAt(oneTimestepAgo, i);
