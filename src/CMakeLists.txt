@@ -6,8 +6,15 @@ ADD_EXECUTABLE(${project_BIN} ${project_SRCS})
 TARGET_LINK_LIBRARIES(${project_BIN} ${project_LIBS})
 
 SET_TARGET_PROPERTIES(${project_BIN} PROPERTIES VERSION "${APPLICATION_VERSION_MAJOR}.${APPLICATION_VERSION_MINOR}" OUTPUT_NAME ${project_BIN} CLEAN_DIRECT_OUTPUT 1)
+if (CMAKE_COMPILER_IS_GNUCXX)
+  	message(status "Setting GCC flags")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -pedantic")
+elseif(WIN32)
+	message(status "Setting ICC")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE} /O3 /Ob2 /Oi /Ot /GT /GA /Qopt-matmul /Qparallel /Q-use-intel-optimized-headers /gy /arch:AVX2 /fp:fast=2")
+endif()
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter -pedantic")
-TARGET_COMPILE_FEATURES(${PROJECT_NAME} PRIVATE cxx_constexpr)
+set_property(TARGET ${project_BIN} PROPERTY CXX_STANDARD 14)
+set_property(TARGET ${project_BIN} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 INSTALL(TARGETS ${project_BIN} DESTINATION bin)

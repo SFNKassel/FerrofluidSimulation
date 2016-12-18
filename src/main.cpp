@@ -42,8 +42,8 @@ int main(int argc, char ** argv) {
         fclose(file);
     });
     f.simulate();
-
     f.write_metadata(out + timestamp + ".sim.metadata", timestamp);
+
     cout << (out + timestamp + ".sim").c_str() << endl;
     system((std::string("java -jar ") + jfile + " " + out).c_str());
 }
