@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
      */
 
     string timestamp = to_string(time(0) + 1);
-    sim f(1000, 10000, 100, [&](vector<Vec3> & positions) {
+    sim f(500, 5000, 100, [&](vector<Vec3> & positions) {
         FILE * file = fopen((out + timestamp + ".sim").c_str(), "ab");
         fwrite(positions.data(), sizeof(Vec3), positions.size(), file);
         fclose(file);

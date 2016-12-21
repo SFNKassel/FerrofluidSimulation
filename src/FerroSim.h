@@ -173,7 +173,7 @@ struct sim : sim_data {
             d               = distance.norm();
 
             max     = (4.0 * radius_oil) - d;
-			maxDops = (0.5 / pow(2 * radius_oil, 15)) * pow(d - (4 * radius_oil), 16);
+			maxDops = (0.5 / pow(2 * radius_oil, 9)) * pow(d - (4 * radius_oil), 10);
 
             if(max < 0.0) continue;
 
@@ -202,8 +202,8 @@ struct sim : sim_data {
 
             f64 frictionCoefficient = 6 * M_PI * viscosity * radius_particle;
 
-            Vec3 dist = old_pos[i] - pos[i];
-            f -= dist * frictionCoefficient * delta_t;
+            Vec3 dist = pos[i] - old_pos[i];
+            f -= (dist / delta_t) * frictionCoefficient;
 
             Vec3 surfaceTensionDops = fOberflaecheDops(i);
             f += surfaceTensionDops;
@@ -211,15 +211,16 @@ struct sim : sim_data {
 
         for(int i = 0; i < size; i++) {
 			Vec3 v(0);
-            v = old_pos[i] - pos[i];
+            v = (pos[i] - old_pos[i]) / delta_t;
 
             // NOTE(robin): fix for birk fail :D
             v += force[i] / mass_oil * delta_t;
 
+			//v += Vec3::fromPolar<double>(brownianMotion, (float)(rfloat * 2 * M_PI), (float)(rfloat * 2 * M_PI)) / (delta_t * 100);
             /* v += force[i] / mass_oil; */
 
             Vec3 & posA = pos[i];
-            new_pos[i]  = posA + (v * delta_t);
+			new_pos[i] = posA + (v * delta_t);// + (force[i] /(2 * mass_oil) * sq(delta_t));
 			if (new_pos[i].z < 0) new_pos[i].z = 0; //Force Bottom Cutoff
         }
 
