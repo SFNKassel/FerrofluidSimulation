@@ -1,0 +1,1 @@
+cmake . -T "Intel C++ Compiler 16.0" -G "Visual Studio 14 Win64"
