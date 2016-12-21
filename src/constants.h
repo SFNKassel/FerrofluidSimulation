@@ -8,12 +8,12 @@
 
 namespace constant {
     constexpr f64 M_PI   = 3.14159265358979323;
-    constexpr f64 width_basin = 0.1;
+    constexpr f64 width_basin = 0.06;
     constexpr f64 viscosity   = 1.0;
     constexpr f64 chi         = 0;
     constexpr f64 myR         = 0.0;
     constexpr f64 sigma       = 72.75;
-    constexpr f64 kSTension   = 1.2898979485566355 * sigma;
+    constexpr f64 kSTension   = 1.2898979485566355 * sigma * 0.001;
     constexpr f64 radius_oil  = 0.01;
     constexpr f64 area_oil    = M_PI * radius_oil * radius_oil;
     constexpr f64 volume_oil =

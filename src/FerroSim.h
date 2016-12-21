@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <time.h>
 
 using namespace std;
 using namespace constant;
@@ -25,6 +26,8 @@ struct sim_data {
     vector<f64>  phi;
 };
 
+#define rfloat ((float)rand()/(float)(RAND_MAX))
+
 struct sim : sim_data {
     int                            size;
     int                            timesteps;
@@ -40,10 +43,12 @@ struct sim : sim_data {
     }
 
     void init_particles() {
+		srand(time(NULL));
+
         int used   = 0;
         f64 height = 0.0f;
         while(used < size) {
-            pos[used++] = Vec3(0.0f, 0.0f, height);
+            pos[used++] = Vec3((rfloat * radius_oil * 0.05), (rfloat * radius_oil * 0.05), height + (rfloat * radius_oil * 0.05));
             for(f64 width = radius_oil * 2; width < width_basin;
                 width += radius_oil * 2) {
                 int toDistribute = (2 * M_PI * width) / (2 * radius_oil);
@@ -51,8 +56,8 @@ struct sim : sim_data {
                 f64 alpha        = (2 * M_PI) / toDistribute;
                 f64 currentAlpha = 0;
                 for(int particle = 0; particle < toDistribute; particle++) {
-                    pos[used++] = Vec3(cos(alpha * particle) * width,
-                                       sin(alpha * particle) * width, height);
+                    pos[used++] = Vec3(cos(alpha * particle) * width + (rfloat * radius_oil * 0.05),
+                                       sin(alpha * particle) * width + (rfloat * radius_oil * 0.05), height + (rfloat * radius_oil * 0.05));
                     currentAlpha += alpha;
                 }
                 if(used == size) break;
@@ -154,7 +159,6 @@ struct sim : sim_data {
 
     Vec3 fOberflaecheDops(int num) {
         f64  d               = 0.0;
-        f64  force           = 0.0;
         f64  max             = 0.0;
         f64  maxDops         = 0.0;
         Vec3 currentParticle = pos[num];
@@ -169,24 +173,25 @@ struct sim : sim_data {
             d               = distance.norm();
 
             max     = (4.0 * radius_oil) - d;
-            maxDops = ((-5.0 * gravity) * ((2 * radius_oil) / d + 0.1) +
-                       (5.5 * gravity));
+			maxDops = (0.5 / pow(2 * radius_oil, 15)) * pow(d - (4 * radius_oil), 16);
 
             if(max < 0.0) continue;
 
-            force = kSTension / d * max;
-            result -= distance * force;
+            result -= distance / d * (kSTension * max);
 
             if(maxDops < 0.0) continue;
 
-            result += distance * maxDops;
+            result += distance / d * (kSTension * maxDops);
+			//printf("Fd %f ", (kSTension * maxDops));
+			//printf("Fo %f ", (kSTension * max));
+			//printf("D %f\t", d);
         }
 
         return result;
     }
 
     void calculate() {
-        computePhi();
+       // computePhi();
 
         for(int i = 0; i < size; i++) {
             Vec3 & f = force[i];
@@ -204,8 +209,8 @@ struct sim : sim_data {
             f += surfaceTensionDops;
         }
 
-        Vec3 v(0);
         for(int i = 0; i < size; i++) {
+			Vec3 v(0);
             v = old_pos[i] - pos[i];
 
             // NOTE(robin): fix for birk fail :D
@@ -215,6 +220,7 @@ struct sim : sim_data {
 
             Vec3 & posA = pos[i];
             new_pos[i]  = posA + (v * delta_t);
+			if (new_pos[i].z < 0) new_pos[i].z = 0; //Force Bottom Cutoff
         }
 
         // swap the vectors, to save the awkward calculations of oneTimeStepAgo,
@@ -226,7 +232,6 @@ struct sim : sim_data {
     }
 
     void simulate() {
-
         for(long ts = 0; ts < timesteps; ts++) {
             printf("Timestep %li\r\n", ts);
             save_function(pos);

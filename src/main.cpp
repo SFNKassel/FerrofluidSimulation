@@ -36,13 +36,13 @@ int main(int argc, char ** argv) {
      */
 
     string timestamp = to_string(time(0) + 1);
-    sim f(80, 5000, 3000, [&](vector<Vec3> & positions) {
+    sim f(1000, 10000, 100, [&](vector<Vec3> & positions) {
         FILE * file = fopen((out + timestamp + ".sim").c_str(), "ab");
         fwrite(positions.data(), sizeof(Vec3), positions.size(), file);
         fclose(file);
     });
-    f.simulate();
     f.write_metadata(out + timestamp + ".sim.metadata", timestamp);
+    f.simulate();
 
     cout << (out + timestamp + ".sim").c_str() << endl;
     system((std::string("java -jar ") + jfile + " " + out).c_str());
