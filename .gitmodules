@@ -1,0 +1,12 @@
+[submodule "lib/glfw"]
+	path = lib/glfw
+	url = https://github.com/glfw/glfw
+[submodule "lib/glew"]
+	path = lib/glew
+	url = https://github.com/nigels-com/glew
+[submodule "lib/glad"]
+	path = lib/glad
+	url = https://github.com/Dav1dde/glad
+[submodule "lib/flare"]
+	path = lib/flare
+	url = https://github.com/rroohhh/flare
