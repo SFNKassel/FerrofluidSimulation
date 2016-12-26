@@ -10,3 +10,6 @@
 [submodule "lib/flare"]
 	path = lib/flare
 	url = https://github.com/rroohhh/flare
+[submodule "lib/glm"]
+	path = lib/glm
+	url = https://github.com/g-truc/glm/

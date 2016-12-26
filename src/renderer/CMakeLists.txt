@@ -1,5 +1,5 @@
 FILE (GLOB_RECURSE project_SRCS *.cpp *.cxx *.cc *.C *.c *.h *.hpp)
-SET (project_LIBS glad glfw flare)
+SET (project_LIBS glad glfw flare glm)
 SET (project_BIN "renderer")
 
 ADD_EXECUTABLE(${project_BIN} ${project_SRCS})
