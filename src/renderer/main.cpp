@@ -16,25 +16,26 @@
 using namespace std;
 
 // Shader sources
-const GLchar * vertexSource =
-	"#version 330 core\n"
-	"in vec3 position;"
-	"in vec4 center;"
-	"in vec3 color;"
-	"in vec2 texcoord;"
-	"out vec3 Color;"
-	"out vec2 Texcoord;"
-	"uniform mat4 model;"
-	"uniform mat4 view;"
-	"uniform mat4 proj;"
-	"uniform float scale;"
-	"void main()"
-	"{"
-	"    Color = color;"
-	"    Texcoord = texcoord;"
-	"    gl_Position = proj * view * model * vec4((position * center.w + "
-	"vec3(center.x, center.y, center.z)) * scale, 1.0);"
-	"}";
+const GLchar * vertexSource = "#version 330 core\n"
+							  "in vec3 position;"
+							  "in vec4 center;"
+							  "in vec3 color;"
+							  "in vec2 texcoord;"
+							  "out vec3 Color;"
+							  "out vec2 Texcoord;"
+							  "uniform mat4 model;"
+							  "uniform mat4 view;"
+							  "uniform mat4 proj;"
+							  "uniform vec3 origin;"
+							  "uniform float scale;"
+							  "void main()"
+							  "{"
+							  "    Color = color;"
+							  "    Texcoord = texcoord;"
+							  "    gl_Position = proj * view * model * "
+							  "vec4((position * center.w + origin +"
+							  "center.xyz) * scale, 1.0);"
+							  "}";
 
 const GLchar * fragmentSource = "#version 330 core\n"
 								"in float vertexID;"
@@ -117,8 +118,10 @@ GLint     uniView;
 GLint     uniModel;
 GLint     uniProj;
 GLint     uniScale;
+GLint     uniOrigin;
 glm::vec4 xAxis(0.0f, 0.0f, 1.0f, 0.0f);
 glm::vec4 yAxis(1.0f, 0.0f, 0.0f, 0.0f);
+glm::vec3 origin(0.0f, 0.0f, 0.0f);
 
 static void mouse_button_callback(GLFWwindow * window, int button, int action,
 								  int mods) {
@@ -166,8 +169,16 @@ static void mouse_move_callback(GLFWwindow * window, double currentX,
 		f64 deltaX = float(originX - currentX) / float(width);
 		f64 deltaY = float(originY - currentY) / float(height);
 
-		view = glm::translate(view, glm::vec3(deltaX, 0.0, deltaY));
-		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+		/*
+		 * view = glm::translate(view, glm::vec3(deltaX, 0.0, deltaY));
+		 * glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+		 */
+		auto tmp = glm::vec4(origin, 1.0) +
+				   glm::inverse(model) * glm::vec4(deltaX, 0.0, deltaY, 1.0);
+
+		origin = glm::vec3(tmp.x, tmp.y, tmp.z);
+		/* origin = origin + model * glm::vec3(deltaX, 0.0, deltaY, 0.0); */
+		glUniform3fv(uniOrigin, 1, glm::value_ptr(origin));
 
 		originX = currentX;
 		originY = currentY;
@@ -414,6 +425,9 @@ int main(int argc, char ** argv) {
 
 	uniScale = glGetUniformLocation(shaderProgram, "scale");
 	glUniform1f(uniScale, ::distance);
+
+	uniOrigin = glGetUniformLocation(shaderProgram, "origin");
+	glUniform3fv(uniOrigin, 1, glm::value_ptr(origin));
 
 	glfwSetCursorPosCallback(window, mouse_move_callback);
 	glfwSetWindowSizeCallback(window, reshape);
