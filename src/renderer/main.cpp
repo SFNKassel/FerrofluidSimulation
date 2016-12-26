@@ -10,27 +10,31 @@
 #include <stdlib.h>
 #include <vector>
 #include <iostream>
+#include <cpptoml.h>
+#include <istream>
 
 using namespace std;
 
 // Shader sources
-const GLchar * vertexSource = "#version 330 core\n"
-							  "in vec3 position;"
-							  "in vec4 center;"
-							  "in vec3 color;"
-							  "in vec2 texcoord;"
-							  "out vec3 Color;"
-							  "out vec2 Texcoord;"
-							  "uniform mat4 model;"
-							  "uniform mat4 view;"
-							  "uniform mat4 proj;"
-							  "uniform float scale;"
-							  "void main()"
-							  "{"
-							  "    Color = color;"
-							  "    Texcoord = texcoord;"
-							  "    gl_Position = proj * view * model * vec4((position * center.w + vec3(center.x, center.y, center.z)) * scale, 1.0);"
-							  "}";
+const GLchar * vertexSource =
+	"#version 330 core\n"
+	"in vec3 position;"
+	"in vec4 center;"
+	"in vec3 color;"
+	"in vec2 texcoord;"
+	"out vec3 Color;"
+	"out vec2 Texcoord;"
+	"uniform mat4 model;"
+	"uniform mat4 view;"
+	"uniform mat4 proj;"
+	"uniform float scale;"
+	"void main()"
+	"{"
+	"    Color = color;"
+	"    Texcoord = texcoord;"
+	"    gl_Position = proj * view * model * vec4((position * center.w + "
+	"vec3(center.x, center.y, center.z)) * scale, 1.0);"
+	"}";
 
 const GLchar * fragmentSource = "#version 330 core\n"
 								"in float vertexID;"
@@ -41,7 +45,7 @@ const GLchar * fragmentSource = "#version 330 core\n"
 								"{"
 								"    outColor = vec4(Color, 1.0);"
 								"}";
-								/* "        outColor = vec4(1.0, 0.0, 0.0, 1.0);" */
+/* "        outColor = vec4(1.0, 0.0, 0.0, 1.0);" */
 
 static void error_callback(int error, const char * description) {
     fprintf(stderr, "Error: %s\n", description);
@@ -192,7 +196,60 @@ static void scroll_callback(GLFWwindow * window, double xoffset,
 	glUniform1f(uniScale, ::distance);
 }
 
+void update_center(ifstream & file, long particles, double radius,
+				   GLuint center_vbo) {
+	std::vector<v3>      center(particles);
+	std::vector<GLfloat> centers(particles * 4);
+
+	file.read((char *)center.data(), sizeof(v3) * center.size());
+
+	for(s64 i = 0; i < particles; i++) {
+		centers[4 * i]     = center[i].comp[0];
+		centers[4 * i + 1] = center[i].comp[1];
+		centers[4 * i + 2] = center[i].comp[2];
+		centers[4 * i + 3] = radius * 200; // TODO(robin): random magic constant
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, center_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * centers.size(),
+				 centers.data(), GL_STREAM_DRAW);
+}
+
 int main(int argc, char ** argv) {
+	long     particles;
+	long     timesteps;
+	long     current_timestep;
+	double   radius;
+	ifstream sim_file;
+	sim_file.exceptions(ifstream::failbit | ifstream::badbit);
+
+	if(argc != 2) {
+		cerr << "Exactly one argument required!" << endl;
+		exit(-1);
+	} else {
+		try {
+			auto table = cpptoml::parse_file(argv[1]);
+			particles =
+				*table->get_qualified_as<long>("SimulationData.Particles");
+			timesteps =
+				*table->get_qualified_as<long>("SimulationData.Timesteps");
+			radius = *table->get_qualified_as<double>(
+				"SimulationParameters.RadiusParticle");
+			cout << "timesteps: " << timesteps << endl;
+			cout << "particles: " << particles << endl;
+			auto tmp          = string(argv[1]);
+			auto sim_filename = tmp.substr(0, tmp.size() - 9);
+			cout << "sim_filename: " << sim_filename << endl;
+			sim_file = ifstream(sim_filename, ios::binary);
+		} catch(const cpptoml::parse_exception & e) {
+			cerr << "Failed to parse config file: " << e.what() << endl;
+			exit(-1);
+		} catch(std::ifstream::failure & failure) {
+			cerr << "Error during reading metadata occured: " << failure.what();
+			exit(-1);
+		}
+	}
+
 	GLFWwindow * window;
 	glfwSetErrorCallback(error_callback);
 
@@ -237,7 +294,7 @@ int main(int argc, char ** argv) {
 		{{4, 9, 5}},  {{2, 4, 11}}, {{6, 2, 10}},  {{8, 6, 7}},  {{9, 8, 1}}};
 
 	flr::Mesh      m(verts, fcs);
-	flr::IcoSphere s(m, 0.4, 6);
+	flr::IcoSphere s(m, 0.4, 4);
 
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
@@ -252,11 +309,13 @@ int main(int argc, char ** argv) {
 
 	GLuint center_vbo;
 	glGenBuffers(1, &center_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, center_vbo);
-	std::vector<GLfloat> center = {3, 0, 0, 1, -3, 0, 0, 2};
-	/* std::vector<GLfloat> center = {0, 0, 0, 1}; */
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * center.size(),
-				 center.data(), GL_STREAM_DRAW);
+	/*
+	 * glBindBuffer(GL_ARRAY_BUFFER, center_vbo);
+	 * std::vector<GLfloat> center = {3, 0, 0, 1, -3, 0, 0, 2};
+	 * /\* std::vector<GLfloat> center = {0, 0, 0, 1}; *\/
+	 * glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * center.size(),
+	 * 			 center.data(), GL_STREAM_DRAW);
+	 */
 
 	// Create and compile the vertex shader
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -330,7 +389,6 @@ int main(int argc, char ** argv) {
 	glEnableVertexAttribArray(centerAttrib);
 	glBindBuffer(GL_ARRAY_BUFFER, center_vbo);
 	glVertexAttribPointer(centerAttrib, 4, GL_FLOAT, GL_FALSE, 0, (void *)0);
-	 
 
 	glVertexAttribDivisor(posAttrib, 0);
 	glVertexAttribDivisor(colAttrib, 0);
@@ -363,16 +421,14 @@ int main(int argc, char ** argv) {
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 	while(!glfwWindowShouldClose(window)) {
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-
+		update_center(sim_file, particles, radius, center_vbo);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		/* glDrawElements(GL_TRIANGLES, s.faces().size() * 3, GL_UNSIGNED_INT,
 		 * 0); */
 		glDrawElementsInstanced(GL_TRIANGLES, s.faces().size() * 3,
-								GL_UNSIGNED_INT, 0, 2);
+								GL_UNSIGNED_INT, 0, particles);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
